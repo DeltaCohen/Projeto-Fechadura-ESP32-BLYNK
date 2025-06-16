@@ -1,6 +1,6 @@
 #define BLYNK_TEMPLATE_ID "SEUTEMPLATEIDAQUI"
 #define BLYNK_TEMPLATE_NAME "SEUTEMPLATENOMEAQUI"
-#define BLYNK_AUTH_TOKEN "SEUTOKENAQUI"  // Pegue no app ou console.blynk.io
+#define BLYNK_AUTH_TOKEN "SEUTOKENAQUI"  // Pegue no console Blynk ou no app
 
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -8,53 +8,48 @@
 
 BlynkTimer timer;
 
-int toggleState_1 = 1;
-int pushButton1State = HIGH;
+#define WIFI_SSID "REDEWIFIAQUI"         // Nome da sua rede Wi-Fi
+#define WIFI_PASS "SENHAWIFIAQUI"        // Senha do Wi-Fi
 
+#define RELAY_PIN_1   26                 // Relé 1 - GPIO 26
+#define RELAY_PIN_2   27                 // Relé 2 - GPIO 27
+#define WIFI_LED      25                 // LED de status WiFi - GPIO 25
+#define PUSH_BUTTON_1 32                 // Botão físico 1 - GPIO 32
+#define PUSH_BUTTON_2 33                 // Botão físico 2 - GPIO 33
+
+#define VPIN_BUTTON_1 V1
+#define VPIN_BUTTON_2 V2
+
+int toggleState_1 = 1;
 int toggleState_2 = 1;
+
+int pushButton1State = HIGH;
 int pushButton2State = HIGH;
 
 int wifiFlag = 0;
 
-#define WIFI_SSID "REDEWIFIAQUI"         // Coloque o nome da sua rede Wi-Fi
-#define WIFI_PASS "SENHAWIFIAQUI"            // Coloque a senha da sua rede
+void alternarReles(int rele) {
+  if (rele == 1) {
+    if (toggleState_1 == 0) {
+      digitalWrite(RELAY_PIN_1, HIGH);
+      toggleState_1 = 1;
+    } else {
+      digitalWrite(RELAY_PIN_1, LOW);
+      toggleState_1 = 0;
+    }
+    delay(200);
+  }
 
-#define RELAY_PIN_1      26             // D26
-#define RELAY_PIN_2      27             // D27
-#define WIFI_LED         25             // D25
-
-#define PUSH_BUTTON_1    32             // D32
-#define PUSH_BUTTON_2    33             // D33
-
-#define VPIN_BUTTON_1    V1 
-#define VPIN_BUTTON_2    V2
-
-void relayOnOff(int relay) {
-  switch(relay){
-    case 1: 
-      if(toggleState_1 == 0){
-        digitalWrite(RELAY_PIN_1, HIGH); // turn on relay 1
-        toggleState_1 = 1;
-      } else {
-        digitalWrite(RELAY_PIN_1, LOW); // turn off relay 1
-        toggleState_1 = 0;
-      }
-      delay(200);
-      break;
-
-    case 2: 
-      if(toggleState_2 == 0){
-        digitalWrite(RELAY_PIN_2, HIGH); // turn on relay 2
-        toggleState_2 = 1;
-      } else {
-        digitalWrite(RELAY_PIN_2, LOW); // turn off relay 2
-        toggleState_2 = 0;
-      }
-      delay(200);
-      break;
-
-    default: break;      
-  } 
+  if (rele == 2) {
+    if (toggleState_2 == 0) {
+      digitalWrite(RELAY_PIN_2, HIGH);
+      toggleState_2 = 1;
+    } else {
+      digitalWrite(RELAY_PIN_2, LOW);
+      toggleState_2 = 0;
+    }
+    delay(200);
+  }
 }
 
 BLYNK_CONNECTED() {
@@ -72,68 +67,75 @@ BLYNK_WRITE(VPIN_BUTTON_2) {
   digitalWrite(RELAY_PIN_2, toggleState_2);
 }
 
-void with_internet(){
+void modoOnline() {
   if (digitalRead(PUSH_BUTTON_1) == LOW) {
-    relayOnOff(1);
+    alternarReles(1);
     Blynk.virtualWrite(VPIN_BUTTON_1, toggleState_1);
   }
+
   if (digitalRead(PUSH_BUTTON_2) == LOW) {
-    relayOnOff(2);
+    alternarReles(2);
     Blynk.virtualWrite(VPIN_BUTTON_2, toggleState_2);
   }
 }
 
-void without_internet(){
+void modoOffline() {
   if (digitalRead(PUSH_BUTTON_1) == LOW) {
-    relayOnOff(1);
+    alternarReles(1);
   }
+
   if (digitalRead(PUSH_BUTTON_2) == LOW) {
-    relayOnOff(2);
+    alternarReles(2);
   }
 }
 
-void checkBlynkStatus() {
-  bool isconnected = Blynk.connected();
-  if (!isconnected) {
-    wifiFlag = 1;
-    digitalWrite(WIFI_LED, LOW);
-  } else {
+void verificarStatusWiFi() {
+  if (Blynk.connected()) {
     wifiFlag = 0;
     digitalWrite(WIFI_LED, HIGH);
+  } else {
+    wifiFlag = 1;
+    digitalWrite(WIFI_LED, LOW);
   }
+}
+
+void inicializarPinos() {
+  pinMode(RELAY_PIN_1, OUTPUT);
+  digitalWrite(RELAY_PIN_1, toggleState_1);
+
+  pinMode(RELAY_PIN_2, OUTPUT);
+  digitalWrite(RELAY_PIN_2, toggleState_2);
+
+  pinMode(PUSH_BUTTON_1, INPUT_PULLUP);
+  pinMode(PUSH_BUTTON_2, INPUT_PULLUP);
+
+  pinMode(WIFI_LED, OUTPUT);
 }
 
 void setup() {
   Serial.begin(9600);
 
-  pinMode(RELAY_PIN_1, OUTPUT);
-  pinMode(PUSH_BUTTON_1, INPUT_PULLUP);
-  digitalWrite(RELAY_PIN_1, toggleState_1);
-
-  pinMode(RELAY_PIN_2, OUTPUT);
-  pinMode(PUSH_BUTTON_2, INPUT_PULLUP);
-  digitalWrite(RELAY_PIN_2, toggleState_2);
-
-  pinMode(WIFI_LED, OUTPUT);
+  inicializarPinos();
 
   WiFi.begin(WIFI_SSID, WIFI_PASS);
+  Blynk.config(BLYNK_AUTH_TOKEN);
 
-  Blynk.config(BLYNK_AUTH_TOKEN);  // agora com Blynk IoT
-  timer.setInterval(3000L, checkBlynkStatus);
+  timer.setInterval(3000L, verificarStatusWiFi);
 }
 
-void loop() {  
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Not Connected");
-  } else {
-    Serial.println("Connected");
+void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("WiFi Conectado");
     Blynk.run();
+  } else {
+    Serial.println("WiFi Desconectado");
   }
 
   timer.run();
 
-  if (wifiFlag == 0)
-    with_internet();
-  else
-    without_internet();
+  if (wifiFlag == 0) {
+    modoOnline();
+  } else {
+    modoOffline();
+  }
 }
