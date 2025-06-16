@@ -1,6 +1,6 @@
-#define BLYNK_TEMPLATE_ID "TMPL26l2Mh694"
-#define BLYNK_TEMPLATE_NAME "teste "
-#define BLYNK_AUTH_TOKEN "0EoPgTmIL5TiPeuzlj6XSa3qw6vmdn59"  // Pegue no app ou console.blynk.io
+#define BLYNK_TEMPLATE_ID "SEUTEMPLATEIDAQUI"
+#define BLYNK_TEMPLATE_NAME "SEUTEMPLATENOMEAQUI"
+#define BLYNK_AUTH_TOKEN "SEUTOKENAQUI"  // Pegue no app ou console.blynk.io
 
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -16,8 +16,8 @@ int pushButton2State = HIGH;
 
 int wifiFlag = 0;
 
-#define WIFI_SSID "Connect_Now"         // Coloque o nome da sua rede Wi-Fi
-#define WIFI_PASS "78080095"            // Coloque a senha da sua rede
+#define WIFI_SSID "REDEWIFIAQUI"         // Coloque o nome da sua rede Wi-Fi
+#define WIFI_PASS "SENHAWIFIAQUI"            // Coloque a senha da sua rede
 
 #define RELAY_PIN_1      26             // D26
 #define RELAY_PIN_2      27             // D27
